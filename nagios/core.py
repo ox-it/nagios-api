@@ -2,13 +2,15 @@
 #
 # core Nagios classes.
 #
+from pynag import Model
+
 
 class Nagios:
     '''This class represents the current state of a Nagios installation, as read
     from the status file that Nagios maintains.
 
     '''
-    def __init__(self, statusfile):
+    def __init__(self, statusfile, cfg_file='/etc/nagios3/nagios.cfg'):
         '''Create a new Nagios state store.  One argument, statusfile, is used to
         indicate where the status file is.  This object is intended to be read-only
         once it has been created.
@@ -18,6 +20,12 @@ class Nagios:
         self.services = {}
         self.comments = {}
         self.downtimes = {}
+
+        if cfg_file:
+            Model.cfg_file = cfg_file
+            self.model = Model
+        else:
+            self.model = None
         self._update(statusfile)
 
     def _update(self, statusfile):
@@ -58,7 +66,18 @@ class Nagios:
         f.close()
 
         for host in self.services:
+            if self.model:
+                host_conf = self.model.Host.objects.filter(host_name=host)
+                if host_conf:
+                    host_conf = host_conf[0]
+                    self.host_or_service(host).attach_config(host_conf)
             for s in self.services[host].itervalues():
+                if self.model:
+                    service_conf = self.model.Service.objects.filter(
+                            host_name=host, service_description=s.service)
+                    if service_conf:
+                        service_conf = service_conf[0]
+                        s.attach_config(service_conf)
                 self.host_or_service(host).attach_service(s)
         for c in self.comments.itervalues():
             self.host_or_service(c.host, c.service).attach_comment(c)
@@ -126,6 +145,13 @@ class HostOrService(NagiosObject):
             'notifications_enabled', 'last_check', 'last_notification',
             'active_checks_enabled', 'problem_has_been_acknowledged',
             'last_hard_state', 'scheduled_downtime_depth']
+        self.config_items = ['alias', 'notes']
+
+    def attach_config(self, conf):
+        for item in self.config_items:
+            if conf.get(item, ''):
+                setattr(self, item, conf[item])
+                self.essential_keys.append(item)
 
     def attach_downtime(self, dt):
         '''Given a Downtime object, store a record to it for lookup later.'''
@@ -136,7 +162,6 @@ class HostOrService(NagiosObject):
         self.comments[cmt.comment_id] = cmt
 
 
-
 class Host(HostOrService):
     '''Represent a single host.
 
@@ -145,6 +170,7 @@ class Host(HostOrService):
         '''Custom build a Host object.'''
         HostOrService.__init__(self, obj)
         self.services = {}
+        self.config_items.append('hostgroups')
 
     def attach_service(self, svc):
         '''Attach a Service to this Host.'''
@@ -164,6 +190,11 @@ class Service(HostOrService):
     '''Represent a single service.
 
     '''
+    def __init__(self, obj):
+        '''Custom build a Host object.'''
+        HostOrService.__init__(self, obj)
+        self.config_items.append('servicegroups')
+
     def for_json(self):
         '''Represent ourselves and also get attached data.'''
         obj = NagiosObject.for_json(self)
