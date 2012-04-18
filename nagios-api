@@ -639,7 +639,7 @@ def send_nagios_command(*args):
     return True
 
 
-def read_status(statusfile):
+def read_status(statusfile, configfile):
     '''Monitor the Nagios status file and update our global data store
     with the data as it changes.
 
@@ -649,7 +649,7 @@ def read_status(statusfile):
     while True:
         stat = os.stat(statusfile)
         if mtime is None or stat.st_mtime > mtime:
-            NAGIOS = Nagios(statusfile)
+            NAGIOS = Nagios(statusfile, configfile)
             mtime = stat.st_mtime
         sleep(1)
 
@@ -691,6 +691,9 @@ def main(argv):
     parser.add_option('-c', '--command-file', dest='commandfile', metavar='FILE',
             default='/var/lib/nagios3/rw/nagios.cmd', help='The file to write '
             'Nagios commands to.')
+    parser.add_option('-C', '--config-file', dest='configfile', metavar='FILE',
+            default='/etc/nagios3/nagios.cfg', help='The main nagios '
+            'configuration file.')
     parser.add_option('-l', '--log-file', dest='logfile', metavar='FILE',
             default='/var/log/nagios3/nagios.log', help='The file Nagios writes '
             'log events to.')
@@ -718,7 +721,8 @@ def main(argv):
 
     info('Listening on port %d, starting to rock and roll!' % options.port)
     app.add_service(Service(http.HttpServer(http_handler), options.port))
-    app.add_loop(Loop(read_status, options.statusfile), keep_alive=True)
+    app.add_loop(Loop(read_status, options.statusfile, options.configfile),
+            keep_alive=True)
     if os.path.isfile(options.logfile):
         LOG_ENABLED = True
         app.add_loop(Loop(read_log, options.logfile), keep_alive=True)
