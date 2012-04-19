@@ -87,12 +87,22 @@ class Nagios:
     def hostgroups(self):
         """Return all the hostgroups and any associated config options"""
         hgs = self.model.Hostgroup.objects.all
-        return [hg['meta']['defined_attributes'] for hg in hgs]
+        groups = {}
+        for hg in hgs:
+            attrs = hg['meta']['defined_attributes'].copy()
+            name = attrs.pop('hostgroup_name', 'NO_NAME')
+            groups[name] = attrs
+        return groups
 
     def servicegroups(self):
         """Return all the servicegroups and any associated config options"""
         sgs = self.model.Servicegroup.objects.all
-        return [sg['meta']['defined_attributes'] for sg in sgs]
+        groups = {}
+        for sg in sgs:
+            attrs = sg['meta']['defined_attributes'].copy()
+            name = attrs.pop('servicegroup_name', 'NO_NAME')
+            groups[name] = attrs
+        return groups
 
     def host_or_service(self, host, service=None):
         '''Return a Host or Service object for the given host/service combo.
