@@ -80,6 +80,22 @@ def http_state(req, objid, reqobj):
     return json_response(req, NAGIOS.for_json())
 
 
+def http_hostgroups(req, objid, reqobj):
+    """View of all the hostgroups and any associated config options"""
+    global NAGIOS
+    if objid is not None:
+        return json_error(req, 'Unexpected object ID.')
+    return json_response(req, NAGIOS.hostgroups())
+
+
+def http_servicegroups(req, objid, reqobj):
+    """View of all the servicegroups and any associated config options"""
+    global NAGIOS
+    if objid is not None:
+        return json_error(req, 'Unexpected object ID.')
+    return json_response(req, NAGIOS.servicegroups())
+
+
 def http_objects(req, objid, reqobj):
     '''Get a host->service mapping. Does not return any data about what
     these objects are. This is to be used to efficiently get a list of
@@ -601,6 +617,8 @@ def http_handler(req):
             'objects': http_objects,
             'host': http_host,
             'service': http_service,
+            'hostgroups': http_hostgroups,
+            'servicegroups': http_servicegroups,
         },
         'POST': {
             'cancel_downtime': http_cancel_downtime,

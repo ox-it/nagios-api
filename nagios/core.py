@@ -84,6 +84,16 @@ class Nagios:
         for d in self.downtimes.itervalues():
             self.host_or_service(d.host, d.service).attach_downtime(d)
 
+    def hostgroups(self):
+        """Return all the hostgroups and any associated config options"""
+        hgs = self.model.Hostgroup.objects.all
+        return [hg['meta']['defined_attributes'] for hg in hgs]
+
+    def servicegroups(self):
+        """Return all the servicegroups and any associated config options"""
+        sgs = self.model.Servicegroup.objects.all
+        return [sg['meta']['defined_attributes'] for sg in sgs]
+
     def host_or_service(self, host, service=None):
         '''Return a Host or Service object for the given host/service combo.
         Note that Service may be None, in which case we return a Host.
