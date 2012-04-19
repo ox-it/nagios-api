@@ -1,10 +1,9 @@
 from distutils.core import setup
-import nagios
 
 install_requires = open('requirements.txt').readlines()
 
 setup(name='nagios-api',
-      version=nagios.version,
+      version="0.2",
       description='Control nagios using an API',
       author='Mark Smith',
       author_email='mark@qq.is',
