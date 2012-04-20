@@ -65,12 +65,13 @@ class Nagios:
                 self.downtimes[int(obj['downtime_id'])] = Downtime(obj)
         f.close()
 
-        for host in self.services:
-            if self.model:
+        for host in self.hosts:
+            if self.model:  # Attach config options to each Host
                 host_conf = self.model.Host.objects.filter(host_name=host)
                 if host_conf:
                     host_conf = host_conf[0]
                     self.host_or_service(host).attach_config(host_conf)
+        for host in self.services:
             for s in self.services[host].itervalues():
                 if self.model:
                     service_conf = self.model.Service.objects.filter(
