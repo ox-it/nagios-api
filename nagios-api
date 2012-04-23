@@ -11,13 +11,13 @@ contributors. See the LICENSE file for full licensing information.
 '''
 
 
-import datetime
 import os
 import re
 import sys
 import time
 import types
 import atexit
+from signal import signal, SIGTERM
 from optparse import OptionParser
 from diesel import Application, Loop, Service, log as glog, sleep
 from diesel.util.lock import synchronized
@@ -774,6 +774,7 @@ def warn(msg):
     LOG.warn(msg)
     return 0
 
+
 def _exitfunc():
     print "Exiting. Cleaning up PID."
     os.unlink(PIDFILE)
@@ -788,5 +789,6 @@ if __name__ == '__main__':
         file(PIDFILE, 'w').write(pid)
 
     atexit.register(_exitfunc)
+    signal(SIGTERM, lambda signum, stack_frame: sys.exit(1))
 
     sys.exit(main(sys.argv))
